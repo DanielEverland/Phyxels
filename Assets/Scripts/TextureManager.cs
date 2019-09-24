@@ -10,7 +10,6 @@ public class TextureManager
         swapChain = new SwapChain(2, size.x * size.y);
 
         CreateTexture(size);
-        
     }
 
     public bool ContainsDirtyPixels => swapChain.ReadBufferContainsDiryPixels;
@@ -69,8 +68,6 @@ public class TextureManager
     {
         int value = GetPixelPositionIndex(x, y);
         swapChain.Write(value);
-
-        PixelRenderer.debugPositions.Add(new Vector3(x, y));
     }
     private int GetPixelPositionIndex(int x, int y)
     {
