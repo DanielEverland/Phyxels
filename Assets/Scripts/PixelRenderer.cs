@@ -9,48 +9,71 @@ public class PixelRenderer : MonoBehaviour
     [SerializeField]
     private Camera targetCamera = null;
 
-    private Texture2D texture;
+    private TextureManager textureHandler;
     private GameObject textureObject;
     private Material textureMaterial;
     private Vector2Int simulationSize;
-
-    private const int PixelDensity = 128;
+    
+    private const int PixelDensity = 4;
 
     private static readonly Color WaterColor = Color.blue;
     private static readonly Color SandColor = Color.yellow;
-    
-    private void Awake()
+
+    // debug stuff
+    private bool allowUpdate = false;
+    public static List<Vector3> debugPositions = new List<Vector3>();
+
+    private void OnDrawGizmos()
     {
+        Gizmos.color = Color.magenta;
+        for (int i = 0; i < debugPositions.Count; i++)
+        {
+            Gizmos.DrawWireCube(debugPositions[i] - (Vector3)((Vector2)simulationSize / 2) + (Vector3)Vector2.one / 2, Vector3.one);
+        }
+    }
+    
+        
+    private IEnumerator Start()
+    {
+        Debug.Break();
+
+        yield return 0;
+
+        allowUpdate = true;
+        
         CreateSimulationSize();
         SetCameraProperties();
         CreateTextureObject();
-        CreateTexture();
+        CreateTextureHandler();
+        CreateInitialPixels();
         CreateMaterial();
         AssignMaterial();
     }
     private void Update()
     {
-        PollPixels();
-        Apply();
+        if(allowUpdate)
+            PollPixels();
     }
 
-    private void Apply()
-    {
-        texture.Apply();
-    }
     private void PollPixels()
     {
-        for (int x = 0; x < texture.width; x++)
+        debugPositions.Clear();
+
+
+        int x, y;
+        
+        while (textureHandler.ContainsDirtyPixels)
         {
-            for (int y = 0; y < texture.height; y++)
-            {
-                PollPixel(new Vector2Int(x, y));
-            }
+            textureHandler.GetDirtyPixel(out x, out y);
+                                    
+            PollPixel(new Vector2Int(x, y));
         }
+        
+        textureHandler.Apply();
     }
     private void PollPixel(Vector2Int position)
     {
-        Color currentColor = texture.GetPixel(position.x, position.y);
+        Color currentColor = textureHandler.GetPixel(position.x, position.y);
 
         if (currentColor == Color.clear)
             return;
@@ -78,15 +101,14 @@ public class PixelRenderer : MonoBehaviour
         if (!IsOutOfBounds(targetPosition))
             return false;
         
-        Color pixelColor = texture.GetPixel(position.x, position.y);
-        Color targetColor = texture.GetPixel(targetPosition.x, targetPosition.y);
+        Color pixelColor = textureHandler.GetPixel(position.x, position.y);
+        Color targetColor = textureHandler.GetPixel(targetPosition.x, targetPosition.y);
 
         if (pixelColor == WaterColor)
         {
             if(targetColor == Color.clear)
             {
-                texture.SetPixel(position.x, position.y, Color.clear);
-                texture.SetPixel(targetPosition.x, targetPosition.y, pixelColor);
+                textureHandler.MovePixel(position.x, position.y, targetPosition.x, targetPosition.y);
 
                 return true;
             }
@@ -95,12 +117,11 @@ public class PixelRenderer : MonoBehaviour
         {
             if(targetColor == WaterColor)
             {
-                SwapPixels(position, targetPosition);
+                textureHandler.SwapPixels(position.x, position.y, targetPosition.x, targetPosition.y);
             }
             else if(targetColor == Color.clear)
             {
-                texture.SetPixel(position.x, position.y, Color.clear);
-                texture.SetPixel(targetPosition.x, targetPosition.y, pixelColor);
+                textureHandler.MovePixel(position.x, position.y, targetPosition.x, targetPosition.y);
             }
 
             return true;
@@ -112,26 +133,13 @@ public class PixelRenderer : MonoBehaviour
 
         return false;
     }
-    private void SwapPixels(Vector2Int a, Vector2Int b)
-    {
-        Color aColor = texture.GetPixel(a.x, a.y);
-        Color bColor = texture.GetPixel(b.x, b.y);
-
-        texture.SetPixel(a.x, a.y, bColor);
-        texture.SetPixel(b.x, b.y, aColor);
-    }
-    private void DestroyPixel(Vector2Int position)
-    {
-        texture.SetPixel(position.x, position.y, Color.clear);
-    }
     private bool IsOutOfBounds(Vector2Int position)
     {
-        if (position.x < 0 || position.x > texture.width - 1 || position.y < 0 || position.y > texture.height - 1)
+        if (position.x < 0 || position.x > simulationSize.x - 1 || position.y < 0 || position.y > simulationSize.y - 1)
             return false;
 
         return true;
     }
-
     private void AssignMaterial()
     {
         textureObject.GetComponent<MeshRenderer>().material = textureMaterial;
@@ -144,41 +152,38 @@ public class PixelRenderer : MonoBehaviour
             y = PixelDensity,
         };
     }
-    private void CreateTexture()
+    private void CreateTextureHandler()
     {
-        texture = new Texture2D(simulationSize.x, simulationSize.y, TextureFormat.ARGB32, false, true);
-        texture.filterMode = FilterMode.Point;
-
-        for (int x = 0; x < texture.width; x++)
+        textureHandler = new TextureManager(simulationSize);
+    }
+    private void CreateInitialPixels()
+    {
+        for (int y = 0; y < simulationSize.y; y++)
         {
-            for (int y = 0; y < texture.height; y++)
+            for (int x = 0; x < simulationSize.x; x++)
             {
-                if(Random.Range(0f, 1f) > 0.8f)
+                if (Random.Range(0f, 1f) > 0.8f)
                 {
-                    if(Random.Range(0f, 1f) > 0.6f)
+                    if (Random.Range(0f, 1f) > 0.6f)
                     {
-                        texture.SetPixel(x, y, SandColor);
+                        textureHandler.CreatePixel(x, y, SandColor);
                     }
                     else
                     {
-                        texture.SetPixel(x, y, WaterColor);                        
-                    }                    
-                }
-                else
-                {
-                    texture.SetPixel(x, y, Color.clear);
+                        textureHandler.CreatePixel(x, y, WaterColor);
+                    }
                 }
             }
         }
 
-        texture.Apply();
+        textureHandler.Apply();
     }
     private void CreateMaterial()
     {
         Shader shader = Shader.Find("Standard");
         textureMaterial = new Material(shader);
 
-        textureMaterial.mainTexture = texture;
+        textureHandler.AssignTextureToMaterial(textureMaterial);
     }
     private void CreateTextureObject()
     {
