@@ -14,10 +14,7 @@ public class PixelRenderer : MonoBehaviour
     private Material textureMaterial;
     private Vector2Int simulationSize;
     
-    private const int PixelDensity = 8;
-
-    private static readonly Color WaterColor = Color.blue;
-    private static readonly Color SandColor = Color.yellow;
+    private const int PixelDensity = 512;
             
     private void Awake()
     {        
@@ -27,12 +24,26 @@ public class PixelRenderer : MonoBehaviour
         CreateTextureHandler();
         CreateMaterial();
         AssignMaterial();
+
+        textureHandler.CreatePixel(100, 100, Color.yellow);
     }
     private void Update()
     {
+        PollInput();
         PollPixels();
     }
+    private void PollInput()
+    {
+        Vector2Int inputPosition = GetMouseInput();
 
+        if(Input.GetKey(KeyCode.Mouse0))
+        {
+            if(textureHandler.GetPixel(inputPosition.x, inputPosition.y) == Color.clear)
+            {
+                textureHandler.CreatePixel(inputPosition.x, inputPosition.y, Materials.Sand);
+            }
+        }
+    }
     private void PollPixels()
     {
         int x, y;
@@ -48,16 +59,31 @@ public class PixelRenderer : MonoBehaviour
     }
     private void PollPixel(Vector2Int position)
     {
+        Vector2Int targetPosition = position + Vector2Int.down;
         
+        if (IsOutOfBounds(targetPosition))
+            return;
+
+        if (textureHandler.GetPixel(targetPosition.x, targetPosition.y) == Color.clear)
+            textureHandler.MovePixel(position.x, position.y, targetPosition.x, targetPosition.y);
     }
     private bool IsOutOfBounds(Vector2Int position)
     {
         if (position.x < 0 || position.x > simulationSize.x - 1 || position.y < 0 || position.y > simulationSize.y - 1)
-            return false;
+            return true;
 
-        return true;
+        return false;
     }
+    private Vector2Int GetMouseInput()
+    {
+        Vector3 mouseInWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
+        return new Vector2Int()
+        {
+            x = Mathf.FloorToInt(mouseInWorld.x),
+            y = Mathf.FloorToInt(mouseInWorld.y),
+        };
+    }
     private void AssignMaterial()
     {
         textureObject.GetComponent<MeshRenderer>().material = textureMaterial;
@@ -85,6 +111,7 @@ public class PixelRenderer : MonoBehaviour
     {
         textureObject = GameObject.CreatePrimitive(PrimitiveType.Quad);
         textureObject.transform.localScale = new Vector3(simulationSize.x, simulationSize.y, 1);
+        textureObject.transform.position = new Vector3((float)simulationSize.x / 2, (float)simulationSize.y / 2);
     }
     private void SetCameraProperties()
     {
@@ -92,5 +119,7 @@ public class PixelRenderer : MonoBehaviour
         targetCamera.orthographicSize = simulationSize.y / 2;
         targetCamera.aspect = simulationSize.x / simulationSize.y;
         targetCamera.ResetAspect();
+
+        targetCamera.transform.position = new Vector3((float)simulationSize.x / 2, (float)simulationSize.y / 2, -1);
     }
 }

@@ -6,6 +6,8 @@ public class SwapChain
 {
     public SwapChain(byte chainSize, int bufferSize)
     {
+        chainSize *= 3;
+
         if (chainSize < 2)
             throw new System.ArgumentException("Chain size must be 2 or higher");
 
@@ -28,15 +30,25 @@ public class SwapChain
 
     public void Swap()
     {
+        int oldReadIndex = readIndex;
+        int oldWriteIndex = writeIndex;
+
         readIndex = WrapIndex(readIndex + 1);
         writeIndex = WrapIndex(writeIndex + 1);
+
+        //Debug.Log($"Swapped read index from {oldReadIndex} to {readIndex}, and write index from {oldWriteIndex} to {writeIndex}");
+
+        //Debug.Log($"\tRead Buffer Values\n{buffers[readIndex][0]}\n{buffers[readIndex][1]}\n{buffers[readIndex][2]}\n{buffers[readIndex][3]}\n{buffers[readIndex][4]}");
+        //Debug.Log($"\tWrite Buffer Values\n{buffers[writeIndex][0]}\n{buffers[writeIndex][1]}\n{buffers[writeIndex][2]}\n{buffers[writeIndex][3]}\n{buffers[writeIndex][4]}");
     }
     public void Write(int pixelPosition)
     {
+        //Debug.Log($"Writing to buffer {writeIndex}, read buffer is {readIndex}");
         buffers[writeIndex].Write(pixelPosition);
     }
     public int Read()
     {
+        //Debug.Log($"Reading from buffer {readIndex}, write buffer is {writeIndex}");
         return buffers[readIndex].Read();
     }
     private int WrapIndex(int index)

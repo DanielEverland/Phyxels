@@ -67,6 +67,7 @@ public class TextureManager
     private void Write(int x, int y)
     {
         int value = GetPixelPositionIndex(x, y);
+        //Debug.Log($"({x}, {y} is value: {value}");
         swapChain.Write(value);
     }
     private int GetPixelPositionIndex(int x, int y)

@@ -9,6 +9,7 @@ public class PixelBuffer
         buffer = new int[size];
     }
 
+    public int this[int index] => buffer[index];
     public int BufferLength => bufferIndex;
 
     private readonly int[] buffer;
@@ -31,6 +32,7 @@ public class PixelBuffer
     }
     private int ReadInternal()
     {
-        return buffer[bufferIndex--];
+        //Debug.Log("Reading index " + (bufferIndex - 1));
+        return buffer[--bufferIndex];
     }
 }
