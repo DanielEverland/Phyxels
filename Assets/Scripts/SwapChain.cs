@@ -6,8 +6,6 @@ public class SwapChain
 {
     public SwapChain(byte chainSize, int bufferSize)
     {
-        chainSize *= 3;
-
         if (chainSize < 2)
             throw new System.ArgumentException("Chain size must be 2 or higher");
 
@@ -18,13 +16,19 @@ public class SwapChain
             buffers[i] = new PixelBuffer(bufferSize);
         }
 
+        writeCount = new int[bufferSize];
+
         readIndex = 0;
         writeIndex = 1;
+        swapIndex = 1;
     }
 
     private readonly PixelBuffer[] buffers;
+    private readonly int[] writeCount;
+
     private int readIndex;
     private int writeIndex;
+    private int swapIndex;
 
     public bool ReadBufferContainsDiryPixels => buffers[readIndex].BufferLength > 0;
 
@@ -36,6 +40,8 @@ public class SwapChain
         readIndex = WrapIndex(readIndex + 1);
         writeIndex = WrapIndex(writeIndex + 1);
 
+        swapIndex++;
+
         //Debug.Log($"Swapped read index from {oldReadIndex} to {readIndex}, and write index from {oldWriteIndex} to {writeIndex}");
 
         //Debug.Log($"\tRead Buffer Values\n{buffers[readIndex][0]}\n{buffers[readIndex][1]}\n{buffers[readIndex][2]}\n{buffers[readIndex][3]}\n{buffers[readIndex][4]}");
@@ -44,6 +50,10 @@ public class SwapChain
     public void Write(int pixelPosition)
     {
         //Debug.Log($"Writing to buffer {writeIndex}, read buffer is {readIndex}");
+        if (writeCount[pixelPosition] == swapIndex)
+            return;
+
+        writeCount[pixelPosition] = swapIndex;
         buffers[writeIndex].Write(pixelPosition);
     }
     public int Read()

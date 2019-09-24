@@ -38,6 +38,8 @@ public class TextureManager
     {
         texture.SetPixel(x, y, color);
 
+        SetNeighborsAsDirty(x, y);
+
         Write(x, y);
     }
     public void SwapPixels(int ax, int ay, int bx, int by)
@@ -48,6 +50,9 @@ public class TextureManager
         texture.SetPixel(ax, ay, bColor);
         texture.SetPixel(bx, by, aColor);
 
+        SetNeighborsAsDirty(ax, ay);
+        SetNeighborsAsDirty(bx, by);
+
         Write(ax, ay);
         Write(bx, by);
     }
@@ -55,6 +60,8 @@ public class TextureManager
     {
         Color color = texture.GetPixel(xStart, yStart);
         texture.SetPixel(xStart, yStart, Color.clear);
+
+        SetNeighborsAsDirty(xStart, yStart);
 
         texture.SetPixel(xEnd, yEnd, color);
         Write(xEnd, yEnd);
@@ -64,6 +71,20 @@ public class TextureManager
         return texture.GetPixel(x, y);
     }
 
+    private void SetNeighborsAsDirty(int x, int y)
+    {
+        if (texture.GetPixel(x - 1, y) != Color.clear)
+            Write(x - 1, y);
+
+        if (texture.GetPixel(x + 1, y) != Color.clear)
+            Write(x + 1, y);
+
+        if (texture.GetPixel(x, y + 1) != Color.clear)
+            Write(x, y + 1);
+
+        if (texture.GetPixel(x, y - 1) != Color.clear)
+            Write(x, y - 1);
+    }
     private void Write(int x, int y)
     {
         int value = GetPixelPositionIndex(x, y);
