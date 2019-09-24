@@ -9,7 +9,6 @@ public class PixelBuffer
         buffer = new int[size];
     }
 
-    public int this[int index] => buffer[index];
     public int BufferLength => bufferIndex;
 
     private readonly int[] buffer;
