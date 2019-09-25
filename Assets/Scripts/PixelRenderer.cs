@@ -14,7 +14,7 @@ public class PixelRenderer : MonoBehaviour
     private Material textureMaterial;
     private Vector2Int simulationSize;
     
-    private const int PixelDensity = 512;
+    private const int PixelDensity = 64;
             
     private void Awake()
     {        
@@ -24,8 +24,6 @@ public class PixelRenderer : MonoBehaviour
         CreateTextureHandler();
         CreateMaterial();
         AssignMaterial();
-
-        textureHandler.CreatePixel(100, 100, Color.yellow);
     }
     private void Update()
     {
