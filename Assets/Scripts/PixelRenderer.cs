@@ -24,6 +24,24 @@ public class PixelRenderer : MonoBehaviour
         CreateTextureHandler();
         CreateMaterial();
         AssignMaterial();
+
+        //for (int x = 0; x < simulationSize.x -1; x++)
+        //{
+        //    for (int y = 0; y < simulationSize.y-1; y++)
+        //    {
+        //        if(Random.Range(0f, 1f) > 0.5f)
+        //        {
+        //            if(Random.Range(0f, 1f) > 0.5f)
+        //            {
+        //                textureHandler.CreatePixel(x, y, Materials.Water);
+        //            }
+        //            else
+        //            {
+        //                textureHandler.CreatePixel(x, y, Materials.Sand);
+        //            }
+        //        }
+        //    }
+        //}
     }
     private void Update()
     {
@@ -39,6 +57,13 @@ public class PixelRenderer : MonoBehaviour
             if(textureHandler.GetPixel(inputPosition.x, inputPosition.y) == Color.clear)
             {
                 textureHandler.CreatePixel(inputPosition.x, inputPosition.y, Materials.Sand);
+            }
+        }
+        else if(Input.GetKey(KeyCode.Mouse1))
+        {
+            if(textureHandler.GetPixel(inputPosition.x, inputPosition.y) == Color.clear)
+            {
+                textureHandler.CreatePixel(inputPosition.x, inputPosition.y, Materials.Water);
             }
         }
     }
@@ -57,13 +82,47 @@ public class PixelRenderer : MonoBehaviour
     }
     private void PollPixel(Vector2Int position)
     {
+        Color pixelColor = textureHandler.GetPixel(position.x, position.y);
+
+        if(pixelColor == Materials.Sand)
+        {
+            PollSand(position);
+        }
+        else if(pixelColor == Materials.Water)
+        {
+            PollWater(position);
+        }
+    }
+    private void PollWater(Vector2Int position)
+    {
+        if(textureHandler.GetPixel(position.x, position.y - 1) == Color.clear && !IsOutOfBounds(position + Vector2Int.down))
+        {
+            textureHandler.MovePixel(position.x, position.y, position.x, position.y - 1);
+        }
+        else if (textureHandler.GetPixel(position.x + 1, position.y) == Color.clear && !IsOutOfBounds(position + Vector2Int.right))
+        {
+            textureHandler.MovePixel(position.x, position.y, position.x + 1, position.y);
+        }
+        else if(textureHandler.GetPixel(position.x - 1, position.y) == Color.clear && !IsOutOfBounds(position + Vector2Int.left))
+        {
+            textureHandler.MovePixel(position.x, position.y, position.x - 1, position.y);
+        }
+    }
+    private void PollSand(Vector2Int position)
+    {
         Vector2Int targetPosition = position + Vector2Int.down;
-        
+
         if (IsOutOfBounds(targetPosition))
             return;
 
         if (textureHandler.GetPixel(targetPosition.x, targetPosition.y) == Color.clear)
+        {
             textureHandler.MovePixel(position.x, position.y, targetPosition.x, targetPosition.y);
+        }
+        else if(textureHandler.GetPixel(targetPosition.x, targetPosition.y) == Materials.Water)
+        {
+            textureHandler.SwapPixels(position.x, position.y, targetPosition.x, targetPosition.y);
+        }
     }
     private bool IsOutOfBounds(Vector2Int position)
     {
